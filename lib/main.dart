@@ -1,3 +1,7 @@
+import 'dart:async';
+
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_auth_example/page/account.dart';
 import 'package:flutter/material.dart';
 
 void main() => runApp(new MyApp());
@@ -25,11 +29,39 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
+  final _auth = FirebaseAuth.instance;
 
-  void _incrementCounter() {
-    setState(() {
-      _counter++;
+  FirebaseUser _user;
+
+  Future<FirebaseUser> _signIn(String email, String password) async {
+    final FirebaseUser user = await _auth.signInWithEmailAndPassword(
+        email: email, password: password);
+    return user;
+  }
+
+  void _onPressed() {
+    var _email = this._emailController.text;
+    var _password = this._passwordController.text;
+
+    if (_email == "" || _password == "") {
+      return;
+    }
+
+    this._signIn(_email, _password).then((user) {
+      setState(() {
+        _user = user;
+      });
+
+      Navigator.push(
+          context,
+          new MaterialPageRoute(
+              settings: const RouteSettings(name: "/account"),
+              builder: (BuildContext context) =>
+                  new AccountPage(user: this._user)));
+    }).catchError((error) {
+      debugPrint(error);
     });
   }
 
@@ -45,6 +77,7 @@ class _MyHomePageState extends State<MyHomePage> {
           children: <Widget>[
             new Container(
               child: new TextField(
+                controller: this._emailController,
                 decoration: InputDecoration(
                     filled: true,
                     fillColor: Colors.grey[300],
@@ -60,6 +93,8 @@ class _MyHomePageState extends State<MyHomePage> {
             ),
             new Container(
               child: new TextField(
+                obscureText: true,
+                controller: this._passwordController,
                 decoration: InputDecoration(
                     filled: true,
                     fillColor: Colors.grey[300],
@@ -75,7 +110,7 @@ class _MyHomePageState extends State<MyHomePage> {
             ),
             new FlatButton(
                 key: null,
-                onPressed: null,
+                onPressed: this._onPressed,
                 child: new Text(
                   "ログイン",
                   style: new TextStyle(
